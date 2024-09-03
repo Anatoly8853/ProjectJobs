@@ -1,8 +1,8 @@
-name: golang-pipeline2
+name: golang-pipeline
 on:
   push:
     branches:
-      - main
+      - first-iteration
     tags:
       - 'v*.*.*'
 jobs:
