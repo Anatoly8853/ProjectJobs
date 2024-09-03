@@ -1,53 +1,63 @@
 name: golang-pipeline
+
+# Определение событий, на которые реагирует workflow
 on:
   push:
     branches:
-      - first-iteration
+      - first-iteration    # Запускает workflow при пуше в ветку first-iteration
     tags:
-      - 'v*.*.*'
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    container: golang:1.22
-    steps:
-      - uses: actions/checkout@v4
+      - 'v*.*.*'  # Запускает workflow при добавлении тегов, например, v1.0.0
 
-      - name: Run Unit Tests
-        run: GOOS=linux GOARCH=amd64 go test
+jobs:
+  # Job для тестирования кода
+  test:
+    name: Lint and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+
+      - name: Install dependencies
+        run: go mod download
 
       - name: Run Linter
         run: go vet ./...
 
       - name: Run Tests
         run: go test -v ./...
+
+  # Job для сборки и публикации Docker-образа
   deploy:
-   name: Push Docker image to Docker Hub
-   runs-on: ubuntu-latest
-   needs: test
-   if: startsWith(github.ref, 'refs/tags')
-   steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: test  # Выполняется после успешного завершения тестов
+    if: startsWith(github.ref, 'refs/tags/')  # Запускается только при наличии тега
 
-    - name: Set up Docker buildx
-      uses: docker/setup-buildx-action@v3
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Extract metadata (tags, labels) for Docker
-      id: meta
-      uses: docker/metadata-action@v5.5.1
-      with:
-        images: avp8853/projectJobs
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-    - name: Build and push Docker Inage
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/myapp:${{ github.ref_name }}
+
+      - name: Image digest
+        run: echo ${{ steps.build.outputs.digest }}
