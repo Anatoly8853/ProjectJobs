@@ -20,7 +20,7 @@ deploy:
       id: meta
       uses: docker/metadata-action@v5.5.1
       with:
-        images: avp8853/ProjectJobs
+        images: avp8853/projectJobs
 
     - name: Build and push Docker Inage
       uses: docker/build-push-action@v5
