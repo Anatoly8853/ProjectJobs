@@ -2,10 +2,10 @@ FROM golang:1.22
 
 WORKDIR /app
 
+RUN go mod download
+
 COPY . .
 
-RUN go mod tidy
+RUN go build -o main .
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /main main.go
-
-CMD ["/main"]
+CMD ["./main"]
