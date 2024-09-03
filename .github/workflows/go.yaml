@@ -19,8 +19,7 @@ jobs:
         run: go vet ./...
 
       - name: Run Tests
-        run: |
-          go test -v ./...
+        run: go test -v ./...
 deploy:
   name: Push Docker image to Docker Hub
   runs-on: ubuntu-latest
